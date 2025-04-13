@@ -1,0 +1,107 @@
+﻿-- Tabla de Distritos
+CREATE TABLE Distrito (
+    id_distrito INT PRIMARY KEY AUTO_INCREMENT,
+    nombre VARCHAR(100) NOT NULL,
+    codigo_postal VARCHAR(10),
+    ciudad VARCHAR(100),
+    provincia VARCHAR(100),
+    pais VARCHAR(100),
+    fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    fecha_actualizacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- Tabla de Usuarios
+CREATE TABLE Usuario (
+    id_usuario INT PRIMARY KEY AUTO_INCREMENT,
+    nombre VARCHAR(100) NOT NULL,
+    apellido VARCHAR(100) NOT NULL,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    telefono VARCHAR(20),
+    contrasena VARCHAR(255) NOT NULL,
+    fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    ultima_conexion TIMESTAMP,
+    estado VARCHAR(20) DEFAULT 'activo',
+    fecha_actualizacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- Tabla de Cocheras
+CREATE TABLE Cochera (
+    id_cochera INT PRIMARY KEY AUTO_INCREMENT,
+    id_distrito INT,
+    id_dueno INT NOT NULL,
+    direccion VARCHAR(255) NOT NULL,
+    capacidad INT DEFAULT 1,
+    precio_hora DECIMAL(10, 2) NOT NULL,
+    disponible BOOLEAN DEFAULT TRUE,
+    descripcion TEXT,
+    hora_apertura TIME,
+    hora_cierre TIME,
+    fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    fecha_actualizacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_distrito) REFERENCES Distrito(id_distrito),
+    FOREIGN KEY (id_dueno) REFERENCES Usuario(id_usuario)
+);
+
+-- Tabla de Reservas
+CREATE TABLE Reserva (
+    id_reserva INT PRIMARY KEY AUTO_INCREMENT,
+    id_usuario INT NOT NULL,
+    id_cochera INT NOT NULL,
+    fecha_inicio DATETIME NOT NULL,
+    fecha_fin DATETIME NOT NULL,
+    estado VARCHAR(20) DEFAULT 'pendiente', -- pendiente, confirmada, cancelada, completada
+    creada_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    actualizada_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_usuario) REFERENCES Usuario(id_usuario),
+    FOREIGN KEY (id_cochera) REFERENCES Cochera(id_cochera)
+);
+
+-- Tabla de Pagos
+CREATE TABLE Pago (
+    id_pago INT PRIMARY KEY AUTO_INCREMENT,
+    id_reserva INT NOT NULL,
+    id_usuario INT NOT NULL,
+    monto DECIMAL(10, 2) NOT NULL,
+    metodo_pago VARCHAR(50) NOT NULL, -- tarjeta, transferencia, efectivo
+    referencia_pago VARCHAR(255),
+    estado VARCHAR(20) DEFAULT 'pendiente', -- pendiente, completado, fallido, reembolsado
+    fecha_pago TIMESTAMP,
+    fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    fecha_actualizacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_reserva) REFERENCES Reserva(id_reserva),
+    FOREIGN KEY (id_usuario) REFERENCES Usuario(id_usuario)
+);
+
+-- Tabla de Reseñas (Reviews)
+CREATE TABLE Review (
+    id_review INT PRIMARY KEY AUTO_INCREMENT,
+    id_usuario INT NOT NULL,
+    id_cochera INT NOT NULL,
+    id_reserva INT,
+    calificacion INT NOT NULL CHECK (calificacion BETWEEN 1 AND 5),
+    comentario TEXT,
+    fecha_review TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    fecha_actualizacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_usuario) REFERENCES Usuario(id_usuario),
+    FOREIGN KEY (id_cochera) REFERENCES Cochera(id_cochera),
+    FOREIGN KEY (id_reserva) REFERENCES Reserva(id_reserva)
+);
+
+-- Tabla para relacionar Dueños con sus Cocheras (relación explícita)
+CREATE TABLE Dueno_Cochera (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    id_usuario INT NOT NULL,
+    id_cochera INT NOT NULL,
+    fecha_asignacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_usuario) REFERENCES Usuario(id_usuario),
+    FOREIGN KEY (id_cochera) REFERENCES Cochera(id_cochera),
+    UNIQUE (id_usuario, id_cochera)
+);
+
+-- Índices para mejorar el rendimiento
+CREATE INDEX idx_reserva_usuario ON Reserva(id_usuario);
+CREATE INDEX idx_reserva_cochera ON Reserva(id_cochera);
+CREATE INDEX idx_pago_reserva ON Pago(id_reserva);
+CREATE INDEX idx_review_cochera ON Review(id_cochera);
+CREATE INDEX idx_cochera_distrito ON Cochera(id_distrito);
+CREATE INDEX idx_cochera_dueno ON Cochera(id_dueno);
